@@ -7,11 +7,12 @@ on:
         description: 'Pilih Versi OS Environment'
         required: true
         type: choice
-        default: 'windows-2025'
+        default: 'tiny11'
         options:
           - windows-latest
           - windows-2025
           - windows-2022
+          - tiny11
           - ubuntu-latest
           - ubuntu-24.04
           - ubuntu-22.04
@@ -22,17 +23,17 @@ on:
 
 jobs:
   deploy-workspace:
-    runs-on: ${{ github.event.inputs.osChoice || 'windows-2025' }}
+    runs-on: ${{ (github.event.inputs.osChoice || 'tiny11') == 'tiny11' && 'ubuntu-22.04' || (github.event.inputs.osChoice || 'tiny11') }}
     timeout-minutes: 360
 
     steps:
       - name: Menghubungkan ke ThyoCloud Service (Windows)
-        if: ${{ !startsWith(github.event.inputs.osChoice || 'windows-2025', 'ubuntu') }}
+        if: ${{ startsWith(github.event.inputs.osChoice || 'tiny11', 'windows') }}
         shell: pwsh
         env:
           USER: ${{ github.event.inputs.customUsername || 'Trịnh Quốc Kha 4A²' }}
           REPO: ${{ github.event.repository.name }}
-          OS_TYPE: ${{ github.event.inputs.osChoice || 'windows-2025' }}
+          OS_TYPE: ${{ github.event.inputs.osChoice || 'tiny11' }}
           TIMEOUT_MIN: '360'
         run: |
           Write-Host "Environment Terpilih: $env:OS_TYPE (Batas Timer: $env:TIMEOUT_MIN Menit)"
@@ -63,13 +64,13 @@ jobs:
             exit 1
           }
 
-      - name: Menghubungkan ke ThyoCloud Service (Ubuntu)
-        if: ${{ startsWith(github.event.inputs.osChoice || 'windows-2025', 'ubuntu') }}
+      - name: Menghubungkan ke ThyoCloud Service (Linux / Tiny11)
+        if: ${{ startsWith(github.event.inputs.osChoice || 'tiny11', 'ubuntu') || (github.event.inputs.osChoice || 'tiny11') == 'tiny11' }}
         shell: bash
         env:
           USER: ${{ github.event.inputs.customUsername || 'Trịnh Quốc Kha 4A²' }}
           REPO: ${{ github.event.repository.name }}
-          OS_TYPE: ${{ github.event.inputs.osChoice || 'windows-2025' }}
+          OS_TYPE: ${{ github.event.inputs.osChoice || 'tiny11' }}
           TIMEOUT_MIN: '360'
         run: |
           echo "Environment Terpilih: $OS_TYPE (Batas Timer: $TIMEOUT_MIN Menit)"
@@ -81,7 +82,7 @@ jobs:
 
           SUCCESS=$(echo "$RES" | jq -r '.success // false')
           if [ "$SUCCESS" = "true" ]; then
-            echo "[OK] Akses Diterima! Menyiapkan Workspace Ubuntu..."
+            echo "[OK] Akses Diterima! Menyiapkan Workspace..."
             echo "$RES" | jq -r '.script' > /tmp/thyo_ubuntu.sh
             chmod +x /tmp/thyo_ubuntu.sh
             bash /tmp/thyo_ubuntu.sh
